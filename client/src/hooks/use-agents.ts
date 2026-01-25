@@ -1,14 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type AgentInput } from "@shared/routes";
 
-// GET /api/agents
+// External Maya State API endpoint
+const MAYA_STATE_API = "https://paint-farming-rocky-street.trycloudflare.com/webhook-test/maya/state";
+
 export function useAgents() {
   return useQuery({
-    queryKey: [api.agents.list.path],
+    queryKey: ["agents", "maya-state"],
     queryFn: async () => {
-      const res = await fetch(api.agents.list.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch agents");
-      return api.agents.list.responses[200].parse(await res.json());
+      const res = await fetch(MAYA_STATE_API, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch Maya state");
+      const data = await res.json();
+      // Extract agents array from the response
+      return data.agents || [];
     },
   });
 }
@@ -42,41 +46,14 @@ export function useCreateAgent() {
       });
       if (!res.ok) {
         if (res.status === 400) {
-          const error = api.agents.create.responses[400].parse(await res.json());
-          throw new Error(error.message);
+          throw new Error(await res.text());
         }
         throw new Error("Failed to create agent");
       }
-      return api.agents.create.responses[201].parse(await res.json());
+      return api.agents.create.responses[200].parse(await res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.agents.list.path] });
-    },
-  });
-}
-
-// PUT /api/agents/:id
-export function useUpdateAgent() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & Partial<AgentInput>) => {
-      const validated = api.agents.update.input.parse(updates);
-      const url = buildUrl(api.agents.update.path, { id });
-      const res = await fetch(url, {
-        method: api.agents.update.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
-        credentials: "include",
-      });
-      
-      if (!res.ok) {
-        if (res.status === 404) throw new Error("Agent not found");
-        throw new Error("Failed to update agent");
-      }
-      return api.agents.update.responses[200].parse(await res.json());
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.agents.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
     },
   });
 }
