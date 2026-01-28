@@ -2,8 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type AgentInput } from "@shared/routes";
 
 // External Maya State API endpoint
-const MAYA_STATE_API =
-"http://76.13.2.214:5678/webhook/maya/state";
+const MAYA_STATE_API = import.meta.env.VITE_API_URL || "https://paint-farming-rocky-street.trycloudflare.com/webhook/maya/state";
 export function useAgents() {
   return useQuery({
     queryKey: ["agents", "maya-state"],
