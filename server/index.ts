@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { db } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
@@ -23,6 +24,25 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 
 export function log(message: string, source = "express") {
+  // 🧪 Database connection test endpoint
+  app.get("/db-test", async (req: Request, res: Response) => {
+    try {
+      const result = await db.execute(
+        "SELECT NOW() as now, version() as version",
+      );
+      res.json({
+        ok: true,
+        message: "Database connection successful!",
+        data: result,
+      });
+    } catch (err: any) {
+      res.json({
+        ok: false,
+        error: err.message,
+        details: err.toString(),
+      });
+    }
+  });
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
